@@ -1,0 +1,110 @@
+// This file is part of nand2tetris, as taught in The Hebrew University,
+// and was written by Aviv Yaish, and is published under the Creative 
+// Common Attribution-NonCommercial-ShareAlike 3.0 Unported License 
+// https://creativecommons.org/licenses/by-nc-sa/3.0/
+// It is an extension to the specifications given in  
+// https://www.nand2tetris.org (Shimon Schocken and Noam Nisan, 2017)
+// as allowed by the Creative Common Attribution-NonCommercial-ShareAlike 3.0 
+// File name: projects/12/Keyboard.jack
+
+/**
+ * A library for handling user input from the keyboard.
+ */
+class Keyboard {
+
+    /** Initializes the keyboard. */
+    function void init() {
+      return;
+    } 
+
+    /**
+     * Returns the character of the currently pressed key on the keyboard;
+     * if no key is currently pressed, returns 0.
+     *
+     * Recognizes all ASCII characters, as well as the following keys:
+     * new line = 128 = String.newline()
+     * backspace = 129 = String.backspace()
+     * left arrow = 130
+     * up arrow = 131
+     * right arrow = 132
+     * down arrow = 133
+     * home = 134
+     * End = 135
+     * page up = 136
+     * page down = 137
+     * insert = 138
+     * delete = 139
+     * ESC = 140
+     * F1 - F12 = 141 - 152
+     */
+    function char keyPressed() {
+      return Memory.peek(24576); // 24576 is the the keyboard address)
+    }
+
+    /**								
+     * Waits until a key is pressed on the keyboard and released,
+     * then echoes the key to the screen, and returns the character 
+     * of the pressed key.
+     */
+    function char readChar() {
+      var char c;
+      // display the cursor?
+      while (Keyboard.keyPressed() = 0){} 
+      let c = Keyboard.keyPressed(); // make sure it will capture the c like this or it will be "too late"
+      while (~ (Keyboard.keyPressed() = 0) ) {} 
+      do Output.printChar(c); // display c at the current cursor location and advance the cursor 
+      return c;
+    }
+
+    /**								
+     * Displays the message on the screen, reads from the keyboard the entered
+     * text until a newline character is detected, echoes the text to the screen,
+     * and returns its value. Also handles user backspaces.
+     */
+    function String readLine(String message) {
+		// You can assume input is at most 64 characters long.
+		// Why? Because this is the width of our screen!
+    var String str;
+    var char c;
+    var boolean condition;
+    let condition = false;
+    let str = String.new(64);
+
+    do Output.printString(message);
+
+    while(~condition) {  
+      let c = Keyboard.readChar();
+      if (c = String.newLine()){
+        //do Output.println();
+        let condition = true;
+      }
+      if (c = String.backSpace()){  
+        do str.eraseLastChar();
+      }
+      if (~(c = String.newLine()) & ~(c =  String.backSpace())){
+        do str.appendChar(c);
+      }
+    }
+    return str;
+}
+
+      // return str; I think it's not suppose to be, but why they put it on the video?
+      // can assume no overflows? after 64 we will get new line? maybe we should loop for 64 times and afterward just end by return str 
+
+    /**								
+     * Displays the message on the screen, reads from the keyboard the entered
+     * text until a newline character is detected, echoes the text to the screen,
+     * and returns its integer value (until the first non-digit character in the
+     * entered text is detected). Also handles user backspaces. 
+     */
+    function int readInt(String message) {
+      var String str;
+      var int res;
+      let str = Keyboard.readLine(message);
+      let res = str.intValue();
+      return res;
+      // if need to diaply the text to the screen, see if I suppose to display the given text or only the int part, if only the int part 
+      // can't use readLine function like this
+    }
+
+}

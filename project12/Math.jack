@@ -1,0 +1,177 @@
+// This file is part of nand2tetris, as taught in The Hebrew University,
+// and was written by Aviv Yaish, and is published under the Creative 
+// Common Attribution-NonCommercial-ShareAlike 3.0 Unported License 
+// https://creativecommons.org/licenses/by-nc-sa/3.0/
+// It is an extension to the specifications given in  
+// https://www.nand2tetris.org (Shimon Schocken and Noam Nisan, 2017)
+// as allowed by the Creative Common Attribution-NonCommercial-ShareAlike 3.0 
+// File name: projects/12/Math.jack
+
+/**
+ * A library of commonly used mathematical functions.
+ * Note: Jack compilers implement multiplication and division using OS method calls.
+ */
+class Math {
+
+    static Array two_powers_arr;
+    static int divisor_helper;
+
+    /** Initializes the library. */
+    function void init() {
+      let two_powers_arr = Array.new(16);
+      let two_powers_arr[0] = 1;
+      let two_powers_arr[1] = 2;
+      let two_powers_arr[2] = 4;
+      let two_powers_arr[3] = 8;
+      let two_powers_arr[4] = 16;
+      let two_powers_arr[5] = 32;
+      let two_powers_arr[6] = 64;
+      let two_powers_arr[7] = 128;
+      let two_powers_arr[8] = 256;
+      let two_powers_arr[9] = 512;
+      let two_powers_arr[10] = 1024;
+      let two_powers_arr[11] = 2048;
+      let two_powers_arr[12] = 4096;
+      let two_powers_arr[13] = 8192;
+      let two_powers_arr[14] = 16384;
+      let two_powers_arr[15] = -32767-1;
+      return;
+    }
+
+    /** Returns the absolute value of x. */
+    function int abs(int x) {
+      if (x > 0){
+        return x;
+      }
+      else{
+        return -x;
+      }
+    }
+
+    function int bit(int num, int i) {
+      var int xandi;
+      let xandi = num & two_powers_arr[i];
+      // if xandi == 0 so the bit is 0 so we need to return 0, otherwise the bit is 1 so return 1
+      if (xandi = 0){
+        return 0;
+      }
+      else{
+        return 1;
+      }
+    }
+
+    /** Returns the product of x and y. 
+     *  When a Jack compiler detects the multiplication operator '*' in the 
+     *  program's code, it handles it by invoking this method. In other words,
+     *  the Jack expressions x*y and multiply(x,y) return the same value.
+     */
+    function int multiply(int x, int y) {
+      var int sum, shiftedX, i;
+      let sum = 0;
+      let shiftedX = x;
+      let i = 0;
+      // make sure the number of digits in the representation is 16 and the loop condition is ok
+      while (i < 16){
+        if (Math.bit(y, i) = 1){
+          let sum = sum + shiftedX;
+        }
+        let shiftedX = ^shiftedX; // instead of multiply by 2
+        let i = i + 1;
+      }
+      return sum;
+    }
+
+    function int divide_helper(int x, int y) { 
+      var int q;
+      if ((y > x) | (y < 0)){
+        return 0;
+      }
+      let q = Math.divide(x, ^y);
+      if ((x - divisor_helper) < y) {
+        return ^q;
+      }
+      else {
+         let divisor_helper = divisor_helper + y;
+         return (^q) + 1;
+        }    
+    }
+    // no need for initialize divisor helper by 2?
+
+    /** Returns the integer part of x/y.
+     *  When a Jack compiler detects the multiplication operator '/' in the 
+     *  program's code, it handles it by invoking this method. In other words,
+     *  the Jack expressions x/y and divide(x,y) return the same value.
+     */
+    function int divide(int x, int y) {
+		// This should be implemented without using multiplication.
+		// Hint: updating the value of 2*q*y in the "if" statement requires
+		// at most a single addition operator at every recursion step.
+    var int result;
+    let divisor_helper = 0;
+    let result = Math.divide_helper(Math.abs(x), Math.abs(y));
+    if (((x > 0) & (y > 0)) | ((x < 0) & (y < 0))){
+      return result;
+    }
+    else{
+      return -result;
+    }
+  }
+
+    /** Returns the integer part of the square root of x. */
+    function int sqrt(int x) {
+		// This should be implemented without using division, but
+		// multiplication is allowed.
+      var int res, count, value, indexes_length, temp, index_count;
+      var Array indexes;
+      let indexes = Array.new(8);
+      let temp = 0; // temp will contain the calculation (res + 2^j)^2 
+      let indexes_length = 0; // number of elements in indexes array
+      let res = 0;
+      let count = 7; // 2^15 - 1 is the biggest number we can represent with 16 word width, because of it (2^7)^2 = 2^14 is the biggest
+      // power of two x can be bigger than
+      let value = 0;
+      let index_count = 0;
+      // if (res + 2^j)^2 <= x so  2^j <= sqrt(x) so update res = 2^j
+      // each number can be written as a sum of powers of 2. we find (res) the sum of powers of 2 which is the maxmial natual number that
+      // it's power if smaller than x, so res = sqrt(x) in Jack
+      while (count > -1){ // looping on all possible powers of 2 
+        while (index_count > 0){
+          let temp = temp + two_powers_arr[indexes[index_count - 1] + count + 1];
+          let index_count = index_count - 1;
+        }
+        let temp = temp + two_powers_arr[count + count];
+        let index_count = indexes_length;
+        if ((~(value + temp > x)) & (value + temp > 0)){
+          let res = res + two_powers_arr[count];
+          let value = value + temp;
+          let indexes[indexes_length] = count;
+          let indexes_length = indexes_length + 1;
+          let index_count = index_count + 1;
+        
+        }
+        let count = count - 1;
+        let temp = 0;  
+      }
+      return res;
+  }
+
+    /** Returns the greater number. */
+    function int max(int a, int b) { // in case they are eaul, it's matter what we return?
+      if (a < b){
+        return b;
+      }
+      else{
+        return a;
+      }
+    }
+
+    /** Returns the smaller number. */
+    function int min(int a, int b) { // in case they are eqaul, it's matter what we return?
+      if (a < b){
+        return a;
+      }
+      else{
+        return b;
+      }
+    }
+}

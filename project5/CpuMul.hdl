@@ -1,0 +1,87 @@
+// This file is part of nand2tetris, as taught in The Hebrew University,
+// and was written by Aviv Yaish, and is published under the Creative 
+// Common Attribution-NonCommercial-ShareAlike 3.0 Unported License 
+// https://creativecommons.org/licenses/by-nc-sa/3.0/
+
+// This chip is an extension of the regular CPU that uses the extended ALU.
+// If instruction[15]==0 or (instruction[14]==1 and instruction[13]==1),
+// the CpuMul behaves exactly the same as the regular CPU.
+// If instruction[15]==1 and instruction[14]==0 the chip will behave as follows:
+//  Instruction  | 12 | 11 | 10 |
+// ______________________________           instruction[8]=0 and instruction[7]=1 for a shift in the Extended ALU
+// dest=D<<;jump | 0  | 1  | 1  |           instruction[5] is responsible for the direction of the shift
+// dest=A<<;jump | 0  | 1  | 0  |           instruction[4] is responsible for the input to shift - D or A\M , ALU(x=Dout, y=AorM
+// dest=M<<;jump | 1  | 1  | 0  | 
+// dest=D>>;jump | 0  | 0  | 1  | 
+// dest=A>>;jump | 0  | 0  | 0  |
+// dest=M>>;jump | 1  | 0  | 0  |
+
+
+CHIP CpuMul {
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset=1) or continue executing
+                         // the current program (reset=0).
+    OUT outM[16],        // M value output
+        writeM,          // Write into M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+    
+    PARTS:
+    // Put you code here:
+
+// copied the CPU chip implementation and change the ALU to the ExtendAlu
+
+    // deciding if it's a C instruction or an A instruction by the msb in the instruction. if it's an A instruction- take the address 
+    // and put it at A register. otherwise take prev outM=ALUout (in case of prev instruction was M=1 for example and now D=M)
+    Mux16(a=instruction, b=ALUout, sel=instruction[15], out=AorPrevM); //instruction[15] - opcodes
+    /** A instruction - instruction[15] = 0, instruction[5] doesn't mind - you should load anyway
+    instruction[5] , instruction[15]
+    0                 0 A instruction
+    1                 0 A instruction
+    1                 1 C instruction
+    0                 1 bad! **/
+    Not(in=instruction[5], out=toLoadIfC);
+    Nand(a=toLoadIfC, b=instruction[15], out=toLoadA);
+    ARegister(in=AorPrevM, load=toLoadA, out[0..14]=addressM, out=Aout); 
+
+    Mux16(a=Aout, b=inM, sel=instruction[12], out=AorM); // instruction[12] indicate if the C instruction use A or with M. 
+    // a=0 - A, a=1 - M. to check if I need to consider the case of an A instruction
+
+    // need to load D register only if it's a C construction and if load bit of D is 1
+    And(a=instruction[4], b=instruction[15], out=toLoadD);
+    DRegister(in=ALUout, load=toLoadD, out=Dout); // D register
+
+    And(a=instruction[3], b=instruction[15], out=writeM); // iff it's a C instruction (1) and the load bit of M is 1 so writeM = 1
+
+// new code
+    // If instruction[15]==0 or (instruction[14]==1 and instruction[13]==1), the CpuMul behaves exactly the same as the regular CPU.
+    Not(in=instruction[15], out=not15);
+    And(a=instruction[13], b=instruction[14], out=and1314);
+    Or(a=not15, b=and1314, out=isRegular);
+
+    ExtendAlu(x=Dout ,y=AorM, instruction[0..5]= instruction[6..11], instruction[6]=false, 
+    instruction[7]=true, instruction[8]=isRegular,  out=outM, out=ALUout, zr=zr, ng=ng); 
+
+// end of new code
+
+
+    // there is a jump when...
+    // j3 == 1 and zr == 0 and ng == 0 (the number is positive)
+    // j2 == 1 and zr == 1 
+    // j1 == 1 and zr == 0 and ng == 1
+    Not(in=zr, out=notzr);
+    Not(in=ng, out=notng);
+    And(a=notzr, b=notng, out=isPositive); 
+    And(a=instruction[0], b=isPositive, out=opt1);
+    And(a=instruction[1], b=zr, out=opt2); 
+    And(a=instruction[2], b=ng, out=opt3);
+    Or(a=opt1, b=opt2, out=opt12);
+    Or(a=opt3, b=opt12, out=jump); // final if to jump. jump decide if the PC need to jump to another instruction (the load bit)
+
+    And(a=instruction[15], b=jump, out=jumping); // need to jump only if it's a C instruction, otherwise the checks we did not relavent
+
+    PC(in=Aout, load=jumping, inc=true, reset=reset, out[0..14]=pc); // to check if inc=true is ok because we skip the option of out[t+1] = out[t]
+
+}

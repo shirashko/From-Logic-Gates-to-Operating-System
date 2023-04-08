@@ -1,0 +1,247 @@
+// This file is part of nand2tetris, as taught in The Hebrew University,
+// and was written by Aviv Yaish, and is published under the Creative 
+// Common Attribution-NonCommercial-ShareAlike 3.0 Unported License 
+// https://creativecommons.org/licenses/by-nc-sa/3.0/
+// It is an extension to the specifications given in  
+// https://www.nand2tetris.org (Shimon Schocken and Noam Nisan, 2017)
+// as allowed by the Creative Common Attribution-NonCommercial-ShareAlike 3.0 
+// File name: projects/12/Screen.jack
+
+/**
+ * A library of functions for displaying graphics on the screen.
+ * The Hack physical screen consists of 256 rows (indexed 0..255, top to bottom)
+ * of 512 pixels each (indexed 0..511, left to right). The top left pixel on 
+ * the screen is indexed (0,0).
+ */
+class Screen {
+  static int screen_base_address;
+  static boolean color;
+
+  // each row is 512 pixels, and 512\16 = 32. so each row is represented by 32 rows in the ram (starts at 16384, until 16384 + 31)
+  // so for extracting the y'th row is the range of addresses 16384 + y*32 - 16384 + (y+1)*32 in the ram.
+  // to get to a certain column x, we want the x bit in the range 16384 + (y-1)*32 - 16384 + y*32 in the ram, so we take the start 16384 + y*32 and to add
+  // x bits. beacuse we want an address and not a specific bit, and each address contains 16 bits, we can divide x by 16 and add this, and then get
+  // the relavent address in the ram
+
+    /** Initializes the Screen. */
+    function void init() {
+      let screen_base_address = 16384;
+      let color = true;
+      return;
+    }
+
+    /** Erases the entire screen. */
+    function void clearScreen() {
+      var int count; 
+      let count = 0;
+      while (count < 24576 - screen_base_address){ // maybe it's more efficient to use rectangle with the whole screen
+        do Memory.poke(screen_base_address+count, 0);
+    }
+    return;
+  }
+
+    /** Sets the current color, to be used for all subsequent drawXXX commands.
+     *  Black is represented by true, white by false. */
+    function void setColor(boolean b) {
+      let color = b;
+      return;
+    }
+
+    
+    /** Draws the (x,y) pixel, using the current color. */
+    function void drawPixel(int x, int y) {
+		// For this function, you will need to calculate the value x%16.
+		// It should be calculated quickly without using multiplication or
+		// division, using exactly one basic math/logical operation.
+		// In addition, calculating 16384 + y * 32 + x/16 should not use
+		// division or multiplication.
+    var int address, value, bit_index, mask;
+    let address = screen_base_address + ^(^(^(^(^y)))) + #(#(#(#x)));
+    let value = Memory.peek(address);
+    let bit_index = 15 & x;
+    let mask = 1;
+    while (bit_index > 0){
+      let mask = ^mask;
+      let bit_index = bit_index - 1;
+    }
+    let mask = ~(mask);
+    let value = value & mask;
+    if (color){
+      let value = value | ~(mask);
+    }
+    do Memory.poke(address, value);
+    return;
+  }
+
+    function void drawLine_vertical(int x, int y1, int y2){
+      var int diff, start;
+      let start = Math.min(y1, y2);
+      let diff = Math.abs(y1 - y2) + 1;
+      while (diff > 0){
+        do Screen.drawPixel(x, start);
+        let start = start + 1;
+        let diff = diff - 1;
+      }
+      return;
+    }
+
+    function void drawLine_horizontal(int x1, int x2, int y){
+      var int diff, start, bit_index, mask, added_pixels, value, address, counter;
+      let start = Math.min(x1, x2);
+      let diff = Math.abs(x1 - x2) + 1;
+      let address = screen_base_address + ^(^(^(^(^y)))) + #(#(#(#start)));
+      let value = Memory.peek(address);
+      let bit_index = 15 & start;
+      let mask = 1;
+      while (bit_index > 0){
+        let mask = ^mask;
+        let bit_index = bit_index - 1;
+          
+      }
+      let counter = mask;
+      while((diff > 0) & (~(counter = 0))){
+        let mask =  mask | counter;
+        let counter = ^counter;
+        let diff = diff - 1;
+      }
+      let mask = ~(mask);
+      let value = value & mask;
+      if (color){
+        let value = value | (~(mask));
+      }
+      do Memory.poke(address, value);
+      if (diff > 0){
+        let address = address + 1;
+        while (diff > 15){
+            if (color){
+              do Memory.poke(address, -1);
+            }
+            else{
+              do Memory.poke(address, 0);
+            }
+            let address = address + 1;
+            let diff = diff - 16;
+        }
+        if (diff > 0){
+          let mask = 1;
+          while (diff > 0){
+              let mask = (^mask) | 1;
+              let diff = diff - 1;
+          }
+          let mask = ~(mask);
+          let value = Memory.peek(address);
+          let value = value & mask;
+          if (color){
+            let value = value | ~(mask);
+          }
+          do Memory.poke(address, value);
+        }
+      }
+      return;
+    }
+
+    function void drawLine_slant_right(int x1, int y1, int x2, int y2){
+        var int diff_x, diff_y, diff;
+        let diff_x = Math.abs(x2 - x1);
+        let diff_y = Math.abs(y1 - y2);
+        let diff = 0;
+        do Screen.drawPixel(x1, y1);
+        while(~(x1 = x2) | ~(y1 = y2)){
+          if (diff < 0){
+            let x1 = x1 + 1;
+            let diff = diff + diff_y;
+          }
+          else{
+            let y1 = y1 - 1;
+            let diff = diff - diff_x;
+          }
+          do Screen.drawPixel(x1, y1);
+        }
+        return;
+    }
+
+    function void drawLine_slant_left(int x1, int y1, int x2, int y2){
+      var int diff_x, diff_y, diff;
+      let diff_x = x1 - x2;
+      let diff_y = y1 - y2;
+      let diff = 0;
+      do Screen.drawPixel(x1, y1);
+      while(~(x1 = x2) | ~(y1 = y2)){
+        if (diff < 0){
+          let x1 = x1 - 1;
+          let diff = diff + diff_y;
+        }
+        else{
+          let y1 = y1 - 1;
+          let diff = diff - diff_x;
+        }
+        do Screen.drawPixel(x1, y1);
+      }
+      return;
+    }
+
+    /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
+    function void drawLine(int x1, int y1, int x2, int y2) {
+		// The case where x1 != x2 and y1 != y2 should be implemented without
+		// multiplication or division.
+		// Also, the case where y1 == y2 can be implemented efficiently by
+		// trying to draw as many pixels as possible in a single assignment,
+		// similarly to Fill in project 4.
+      if ((x1 = x2) | (y1 = y2)){
+        if (~(x1 = x2)){
+          do Screen.drawLine_horizontal(x1, x2, y1);
+        }
+        else{
+          if (~(y1 = y2)){
+            do Screen.drawLine_vertical(x1, y1, y2);
+          }
+          else{
+            do Screen.drawPixel(x1, x2);
+          }
+        }
+      }
+      else{
+        if (x1 < x2){
+          if (y1 > y2){
+            do Screen.drawLine_slant_right(x1, y1, x2, y2);
+          }
+          else{
+            do Screen.drawLine_slant_left(x2, y2, x1, y1);
+          }
+        }
+        else{
+          if (y1 > y2){
+            do Screen.drawLine_slant_left(x1, y1, x2, y2);
+          }
+          else{
+            do Screen.drawLine_slant_right(x2, y2, x1, y1);
+          }
+        }
+      }
+      return;
+    }
+
+    /** Draws a filled rectangle whose top left corner is (x1, y1)
+     * and bottom right corner is (x2,y2), using the current color. */
+    function void drawRectangle(int x1, int y1, int x2, int y2) {
+      while (~((y1 - y2) = 0)){
+        do Screen.drawLine_horizontal(x1, x2, y1);
+        let y1 = y1 + 1;
+      }
+      return;
+    }
+
+    /** Draws a filled circle of radius r<=181 around (x,y), using the current color. */
+    function void drawCircle(int x, int y, int r) {
+      var int diff_x, diff_y, counter;
+      let diff_y = -r;
+      let counter = ^r + 1;
+      while (counter > 0){
+          let diff_x = Math.sqrt((r * r) - (diff_y * diff_y));
+          do Screen.drawLine_horizontal((x - diff_x), (x + diff_x), (y + diff_y));
+          let diff_y = diff_y + 1;
+          let counter = counter - 1;
+      }
+      return;
+    }
+}

@@ -1,0 +1,54 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/Memory.hdl
+
+/**
+ * The complete address space of the Hack computer's memory,
+ * including RAM and memory-mapped I/O. 
+ * The chip facilitates read and write operations, as follows:
+ *     Read:  out(t) = Memory[address(t)](t)
+ *     Write: if load(t-1) then Memory[address(t-1)](t) = in(t-1)
+ * In words: the chip always outputs the value stored at the memory 
+ * location specified by address. If load==1, the in value is loaded 
+ * into the memory location specified by address. This value becomes 
+ * available through the out output from the next time step onward.
+ * Address space rules:
+ * Only the upper 16K+8K+1 words of the Memory chip are used. 
+ * Access to address>0x6000 is invalid. Access to any address in 
+ * the range 0x4000-0x5FFF results in accessing the screen memory 
+ * map. Access to address 0x6000 results in accessing the keyboard 
+ * memory map. The behavior in these addresses is described in the 
+ * Screen and Keyboard chip specifications given in the book.
+ */
+// 0 - 16383 - צריך לשגר לרם 16 קיי
+// 16k, 2^14
+// 16384 - 24575 (סה"כ שמונה קיי)
+// הספרה הכי שמאלית היא 0 אם המספר הוא בטווח של ראם 16, והספרה הכי שמאלית- משמעותית היא 1 במקרה אחר
+// 2^13 = 8192 = 24575 - 16383
+CHIP Memory {
+    IN in[16], load, address[15]; // in - what to write, load - if to write, address - in which address to write
+    OUT out[16]; // I think this is whar is written in the end of the program at given address
+
+    PARTS:
+    // Put your code here:
+    // if it's ram so the msb is 0, 1 otherwise
+     // if the address is of IN\OUT so if we ignore the last bit (msb) it's like we are from 0 to 8192 as needed for the Screen and KBD
+    // chips. if it's KBD then address[13] is 1, zero otherwise (SCREEN)
+    /**
+ * 4-way demultiplexor:
+ * {a, b, c, d} = {in, 0, 0, 0} if sel == 00 // RAM
+ *                {0, in, 0, 0} if sel == 01 // RAM
+ *                {0, 0, in, 0} if sel == 10 // SCREEN
+ *                {0, 0, 0, in} if sel == 11 //  KBD
+ */
+    DMux4Way(in=load, sel=address[13..14], a=ram1, b=ram2, c=screen, d=kbd);
+    Or(a=ram1, b=ram2, out=ramload);
+    RAM16K(in=in, load=ramload, address=address[0..13], out=outRam);
+    Screen(in=in, load=screen, address=address[0..12], out=outScreen);
+    Keyboard(out=outKBD);
+    // now we choose the right output from the 3 options
+    //Mux4Way16(a=outRam, b=outRam, c=outScreen, d=outKBD, sel=address[13..14], out=out);
+    Mux16(a=outScreen, b=outKBD, sel=address[13], out=outTemp);
+    Mux16(a=outRam, b=outTemp, sel=address[14], out=out); // address[14] indicate if the given address is for the RAM or for the IN\OUT
+}

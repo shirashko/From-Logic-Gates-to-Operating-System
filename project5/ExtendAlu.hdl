@@ -1,0 +1,59 @@
+// This file is part of nand2tetris, as taught in The Hebrew University,
+// and was written by Aviv Yaish, and is published under the Creative 
+// Common Attribution-NonCommercial-ShareAlike 3.0 Unported License 
+// https://creativecommons.org/licenses/by-nc-sa/3.0/
+
+// The inputs of the extended ALU are instruction[9], x[16], y[16].
+
+// The "ng" and "zr" output pins behave the same as in the regular ALU.
+
+// The "out" output is defined as follows:
+
+// If instruction[8]=1 and instruction[7]=1 the output is identical to the 
+// regular ALU, where:
+// instruction[5]=zx, instruction[4]=nx, ..., instruction[0]=no
+
+// Else, if instruction[8]=0 and instruction[7]=1 the output is a shift:
+// - If instruction[4] == 0, the input "y" will be shifted, otherwise "x", .
+// - If instruction[5] == 0, the shift will be a right-shift, otherwise left.
+
+// - All other inputs are undefined.
+
+CHIP ExtendAlu {
+     IN x[16], y[16], instruction[9]; // instead of 6 seperate bits we get instruction[9] which include another 3 bits with information
+     OUT out[16], zr, ng;
+
+     PARTS:
+     // If instruction[8]=1 and instruction[7]=1 the output is identical to the regular ALU
+     And(a=instruction[8], b=instruction[7], out=isRegular);
+
+     // If instruction[4] == 0, the input "y" will be shifted, otherwise "x"
+     Mux16(a=y, b=x, sel=instruction[4], out=theInputToShift); 
+     ShiftLeft(in=theInputToShift, out=leftShift);
+     ShiftRight(in=theInputToShift, out=rightShift);
+     
+     // If instruction[5] == 0, the shift will be a right-shift, otherwise left
+     Mux16(a=rightShift, b=leftShift, sel=instruction[5], out=shiftedXorY); 
+
+     ALU(x=x, y=y, zx=instruction[5], nx=instruction[4], zy=instruction[3], ny=instruction[2], f=instruction[1], no=instruction[0],
+     out=outRegular, zr=zrNotToUse, ng=ngNotToUse); // regular ALU
+
+     // now need to choose if out=shiftedXorY or outRegular
+     Mux16(a=shiftedXorY, b=outRegular, sel=isRegular, out=out, out[0..7]=out1, out[8..15]=out2, out[15]=ng);
+
+     // and we need to make sure the zr and ng will be the right ones
+     // if (out == 0) set zr = 1
+     // if (out < 0) set ng = 1 ng is decided according to rightest bit (out[15])
+   
+     // Mux(a=outcome[15], b=ng1, sel=isRegular, out=ng);
+     Or8Way(in=out1, out=zr1);
+     Or8Way(in=out2, out=zr2);
+     Or(a=zr1, b=zr2, out=zrNot);
+     Not(in=zrNot, out=zr);
+
+}
+
+     // רציתי לשים את זה בשורה 32 אבל בגלל שהמקרים שבהם זה אחרת לא  מוגדרים אז פשוט החלטתי שאם זה לא המקרה הרגיל אז בכל מקרה נפעיל את זה
+     // Else, if instruction[8]=0 and instruction[7]=1 the output is a shift:
+     // Not(in=instruction[8], out=not8);
+     // And(a=not8, b=instruction[7], out=needToShift);
