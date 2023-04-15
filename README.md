@@ -1,2 +1,3 @@
 # From-Logic-Gates-to-Operating-System
 This repository contains a series of projects that I completed as a computer science student at the Hebrew University of Jerusalem, as part of the Nand to Tetris course. The projects cover a wide range of topics, from building logic gates to developing an operating system
+More information can be found [here](#https://shnaton.huji.ac.il/index.php/NewSyl/67925/2/2022/)
