@@ -12,32 +12,26 @@ more information can be found [here](#https://shnaton.huji.ac.il/index.php/NewSy
 
 
 ## Introduction
-- Exercise 1 - Boolean Logic » Implementation of basic Logic Gates
+- Project 1 - Boolean Logic » Implementation of basic Logic Gates
 
-- Exercise 2 - Boolean Arithmetic » Implementation of Arithmetic Chips
+- Project 2 - Boolean Arithmetic » Implementation of Arithmetic Chips
 
-- Exercise 3 - Sequential Logic » Implementation of Sequential Chips
+- Project 3 - Sequential Logic » Implementation of Sequential Chips
 
-- Exercise 4 - Machine Language » Familiarization with the Nand2Tetris Machine Language
+- Project 4 - Machine Language » Familiarization with the Nand2Tetris Machine Language
 
-- Exercise 5 - Computer Architecture » Implementation of Computer Architecture Chips
+- Project 5 - Computer Architecture » Implementation of Computer Architecture Chips
 
-- Exercise 6 - Assembler » Implementation of an Assembler, translating to Machine Language
+- Project 6 - Assembler » Implementation of an Assembler, translating to Machine Language
 
-- Exercise 7 - Virtual Machine Translator (Part 1) » Implementation of a VM translator for Arithmetic operations
+- Project 7 - Virtual Machine Translator (Part 1) » Implementation of a VM translator for Arithmetic operations
 
-- Exercise 8 - Virtual Machine Translator (Part 2) » Implementation of a VM translator for Functions and Program-Flow
+- Project 8 - Virtual Machine Translator (Part 2) » Implementation of a VM translator for Functions and Program-Flow
 
-- Exercise 9 - High Level Programing » Development of a game with the Jack language
+- Project 9 - High Level Programing » Development of a game with the Jack language
 
-- Exercise 10 - Compilation (Part 1) » Implementation of a Jack Compiler (XML Structured)
+- Project 10 - Compilation (Part 1) » Implementation of a Jack Compiler (XML Structured)
 
-- Exercise 11 - Compilation (Part 2) » Implementation of a Jack Compiler
+- Project 11 - Compilation (Part 2) » Implementation of a Jack Compiler
 
-- Exercise 12 - Operating System » Implementation of a working, basic, Operating System
-
-### Contributing
-You are invited to submit pull requests.
-
-### License
-This project is released under the [MIT](https://choosealicense.com/licenses/mit/) License. See the LICENSE file for details.
+- Project 12 - Operating System » Implementation of a working, basic, Operating System
